@@ -498,6 +498,30 @@ footer .plaque{margin-top:0;margin-bottom:16px}
 
 <h2 id="tracking">Tracking and the Sunday check-in</h2>
 <p>Every Sunday before 20:00 send me one message in this format. Copy the template and fill it in. It takes five minutes and it is the mechanism by which this plan becomes your plan.</p>
+<div class="calc" id="checkin">
+  <div class="eyebrow" style="margin-bottom:12px">Sunday check-in</div>
+  <div class="grid">
+    <div><label for="c-week">Week</label><input id="c-week" type="number" inputmode="numeric" min="0" max="26" placeholder="1"></div>
+    <div><label for="c-weight">7-day avg weight (kg)</label><input id="c-weight" type="number" inputmode="decimal" step="0.1" placeholder="84.6"></div>
+    <div><label for="c-waist">Waist at navel (cm)</label><input id="c-waist" type="number" inputmode="decimal" step="0.5" placeholder="98"></div>
+    <div><label for="c-gym">Gym sessions (of 3)</label><input id="c-gym" type="number" inputmode="numeric" min="0" max="4" placeholder="3"></div>
+    <div><label for="c-home">Home session</label><select id="c-home"><option>yes</option><option>no</option></select></div>
+    <div><label for="c-steps">Avg daily steps</label><input id="c-steps" type="number" inputmode="numeric" placeholder="8500"></div>
+    <div><label for="c-sleep">Avg sleep (hours)</label><input id="c-sleep" type="number" inputmode="decimal" step="0.1" placeholder="6.5"></div>
+    <div><label for="c-food">Nutrition days on target (of 7)</label><input id="c-food" type="number" inputmode="numeric" min="0" max="7" placeholder="5"></div>
+    <div><label for="c-pro">Protein hit (days of 7)</label><input id="c-pro" type="number" inputmode="numeric" min="0" max="7" placeholder="6"></div>
+    <div><label for="c-morn">Mornings done (of 7)</label><input id="c-morn" type="number" inputmode="numeric" min="0" max="7" placeholder="6"></div>
+    <div><label for="c-walks">Two walks done (days of 7)</label><input id="c-walks" type="number" inputmode="numeric" min="0" max="7" placeholder="6"></div>
+  </div>
+  <div style="margin-top:14px"><label for="c-notes" class="eyebrow" style="display:block;margin-bottom:6px;color:var(--muted)">Notes</label><textarea id="c-notes" rows="3" placeholder="Anything sore, any lift that stalled, anything next week I should plan around." style="width:100%;padding:10px;font:inherit;font-size:15px;border:1px solid var(--line-strong);background:#000;color:var(--ink);border-radius:0;resize:vertical"></textarea></div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px">
+    <button type="button" id="c-send" style="font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:12px 18px;background:var(--violet);color:var(--accent-ink);border:none;cursor:pointer">Send on WhatsApp</button>
+    <button type="button" id="c-copy" style="font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:12px 18px;background:transparent;color:var(--ink);border:1px solid var(--line-strong);cursor:pointer">Copy message</button>
+    <span id="c-status" class="note" style="align-self:center"></span>
+  </div>
+  <p class="note">Nothing you type here is stored. The button opens WhatsApp with the message written for you; you press send.</p>
+</div>
+<p class="note">If the form does not open WhatsApp on your phone, the same message in plain text:</p>
 <div class="callout">
   <p><strong>Nthato, week __ check-in</strong></p>
   <p>1. Seven-day average weight: __ kg<br>2. Waist at navel: __ cm<br>3. Gym sessions done: __ of 3 (home session: yes / no)<br>4. Average daily steps: __<br>5. Average sleep: __ hours<br>6. Nutrition adherence: __ out of 7 days on target (protein hit on __ days)<br>7. Mornings done (prayer, Word, three lines): __ of 7<br>8. Two walks done: __ of 7 days<br>Notes: anything sore, any lift that stalled, anything coming up next week I should plan around.</p>
@@ -569,6 +593,34 @@ footer .plaque{margin-top:0;margin-bottom:16px}
   }
   ids.forEach(function(id){document.getElementById(id).addEventListener('input',calc);document.getElementById(id).addEventListener('change',calc)});
   calc();
+
+  // Sunday check-in composer. Set COACH_WHATSAPP to the coach's number in international format, digits only (e.g. 27821234567).
+  var COACH_WHATSAPP='';
+  function v(id){var el=document.getElementById(id);return (el.value||'').trim()||'__'}
+  function compose(){
+    return 'Nthato, week '+v('c-week')+' check-in\n'+
+      '1. Seven-day average weight: '+v('c-weight')+' kg\n'+
+      '2. Waist at navel: '+v('c-waist')+' cm\n'+
+      '3. Gym sessions done: '+v('c-gym')+' of 3 (home session: '+v('c-home')+')\n'+
+      '4. Average daily steps: '+v('c-steps')+'\n'+
+      '5. Average sleep: '+v('c-sleep')+' hours\n'+
+      '6. Nutrition adherence: '+v('c-food')+' of 7 days on target (protein hit on '+v('c-pro')+' days)\n'+
+      '7. Mornings done: '+v('c-morn')+' of 7\n'+
+      '8. Two walks done: '+v('c-walks')+' of 7 days\n'+
+      'Notes: '+v('c-notes');
+  }
+  function status(msg){document.getElementById('c-status').textContent=msg}
+  document.getElementById('c-send').addEventListener('click',function(){
+    var url='https://wa.me/'+COACH_WHATSAPP+'?text='+encodeURIComponent(compose());
+    window.open(url,'_blank','noopener');
+    status(COACH_WHATSAPP?'Opening WhatsApp.':'Opening WhatsApp: choose the contact, the message is prefilled.');
+  });
+  document.getElementById('c-copy').addEventListener('click',function(){
+    var text=compose();
+    function done(){status('Copied. Paste it into WhatsApp.')}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done,function(){fallback()})}else{fallback()}
+    function fallback(){var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done()}catch(e){status('Copy failed; select the text template below.')}document.body.removeChild(ta)}
+  });
 })();
 </script>
 
